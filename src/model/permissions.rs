@@ -682,8 +682,20 @@ impl Default for Permissions {
 
 impl<'de> Deserialize<'de> for Permissions {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        let str_u64 = String::deserialize(deserializer)?;
-        Ok(Permissions::from_bits_truncate(str_u64.parse::<u64>().map_err(D::Error::custom)?))
+        use crate::json::prelude::*;
+
+        let val = Value::deserialize(deserializer)?;
+        let perm = match val.as_u64() {
+            None => {
+                val.as_str()
+                    .ok_or(D::Error::custom("unknown type"))?
+                    .parse::<u64>().map_err(D::Error::custom)?
+            }
+            Some(v) => {
+                v
+            }
+        };
+        Ok(Permissions::from_bits_truncate(perm))
     }
 }
 
